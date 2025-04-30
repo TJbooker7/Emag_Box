@@ -1,8 +1,8 @@
 #include <ILI9486_SPI.h> 
 #include "INA219.h"
 #include "ACS712.h"
-#define SAMPLE_TIME_MS 250  // Collect data for 1 second
-#define SAMPLE_RATE_MS 2     // Sample every 5ms
+#define SAMPLE_TIME_MS 250  // Collect data for 0.250 second
+#define SAMPLE_RATE_MS 2     // Sample every 2ms
  INA219 INA(0x40);
 //Adafruit_INA260 ina260 = Adafruit_INA260();
 ILI9486_SPI tft(SS, 8, 9); // CS, DC, RST
@@ -61,17 +61,11 @@ void setup() {
 
     
 }
-// float applyPolynomial(float x) {
-//     return 2.6062*x ;
-// }
-// float calculateY(float x) {
-//   float y = (1E-17 * pow(x, 6)) - (1E-13 * pow(x, 5)) + (7E-10 * pow(x, 4)) - (1E-06 * pow(x, 3)) + (0.001 * pow(x, 2)) + (2.6535 * x);
-//   return y;
-// }
+
 
 
 void loop() {
-  //tft.print("Hello");
+  
 
     
     unsigned long startTime = millis();
@@ -82,53 +76,52 @@ void loop() {
     while (millis() - startTime < SAMPLE_TIME_MS) {  
         float voltage = INA.getBusVoltage()*1000;
        
-   //     Serial.println(amps);
-       // Serial.println(voltage);
+  
 
         if (voltage > maxVoltage2) { 
             maxVoltage2 = voltage;  // Update max voltage
         }
-        //   if (abs(amps) > maxAmps) {
-        //      maxAmps=abs(amps);// Update max voltage
-        //  }
+      
 
         delay(SAMPLE_RATE_MS);
     }
     maxVoltage=maxVoltage2;
-     // Serial.print(INA.getBusVoltage(), 2);
-  //Serial.print("hello");
-  //float maxVoltage = INA.getBusVoltage()*1000;
+     
   Serial.print(INA.getBusVoltage(), 2);
   Serial.print("hello");
    maxAmps= fabs((ACS.mA_AC_sampling(2,0.5)-130));
 
 
-//tft.fillRect(0, 0, 287, 128, BLACK);
-   // tft.setCursor(0, 10);
+
   
     Serial.print("Max Voltage: ");
     Serial.print(maxVoltage);
     Serial.println(" mV");
- if(fabs(PrevVolt-maxVoltage)>50){
-//tft.fillRect(340, 70, 140, 60,BLACK);
+//
+//This part will check if the voltage change is big enough to clear pixels and write new value.
+//
+ if(fabs(PrevVolt-maxVoltage)>50){ //if there if a differnce in voltage of 50 mv change previous number to black and write over
+
     tft.setCursor(0, 10);
       tft.setTextColor(0x0000);
     tft.print(buffer);
  }
- if(fabs(PrevAmp-maxAmps)>20){
+ if(fabs(PrevAmp-maxAmps)>20){ // if there is a difference in amps of 20mA  change previous number to black and write over
      tft.setCursor(0,70);
       tft.setTextColor(0x0000);
     tft.print(buffer2);
  }
- Maxpower= maxAmps*maxVoltage/1;
- if(fabs(PrevWatt-Maxpower)>=1){
+ Maxpower= maxAmps*maxVoltage/1; 
+ if(fabs(PrevWatt-Maxpower)>=1){ // if there is a difference in power of 1W  change previous number to black and write over
     tft.setCursor(340,70);
       tft.setTextColor(0x0000);
     tft.print(buffer3);
  }
-    //add
-   // int voltageRead=applyPolynomial(maxVoltage);
-    //int voltageRead=calculateY(maxVoltage);
+
+
+//
+//This part write the new value
+// 
     if(fabs(PrevVolt-maxVoltage)>50){
     Serial.println(maxVoltage);
     dtostrf(maxVoltage, 0, 0, buffer);
@@ -173,42 +166,38 @@ dtostrf(Maxpower/1000000, 0, 0, buffer3);
       tft.setTextColor(0xFFFF);
     tft.print(buffer4);
   }
-  // Update Display
-    // int numBars = voltageRead / 54.1;  
-
-    // for (int i = 0; i < numBars; i++) {
-    //     tft.drawFastVLine(i, 200, 120, WHITE);
-    // }
-
-    // for (int i = numBars; i < SCREEN_WIDTH; i++) {
-    //     tft.drawFastVLine(i, 200, 120, BLACK);
-    // }
+  
     
     int numBars = map(maxVoltage, 0, 20000, 0, 480);
     int numBars2 = map(maxAmps, 0, 5000, 0, 480);
     int numBars3 = (map(Maxpower/1000000, 0, 14, 0, 480));
     Serial.println(numBars3);
-
-for (int i = map(PrevVolt, 0, 20000, 0, 480); i < numBars; i++) {
+//
+//This part display the horizontal bars on the screen for voltage, current, and watts
+//If Previous value is greater then it will draw the pixels it needs to in black
+//If the current value is greater then it will draw the pixels needed in color 
+//If you reach the max of volts, amps or wattage make sure to change the max value. 
+// 
+for (int i = map(PrevVolt, 0, 20000, 0, 480); i < numBars; i++) { // (min,max)-> (0-20,000) mili volt mapped to 0-480 pixel
     tft.drawFastVLine(i, 200, 60, 0xF800);  // Draw bar in white
 }
-for (int i = map(PrevVolt, 0, 20000, 0, 480); i > numBars; i--) {
+for (int i = map(PrevVolt, 0, 20000, 0, 480); i > numBars; i--) {// (min,max)-> (0-20,000) mili volt mapped to 0-480 pixel
     tft.drawFastVLine(i, 200, 60, BLACK);  // Draw bar in white
 }
    
 
-for (int i = map(PrevAmp, 0, 5000, 0, 480); i < numBars2; i++) {
+for (int i = map(PrevAmp, 0, 5000, 0, 480); i < numBars2; i++) {// (min,max)-> (0-5,000) mili amps mapped to 0-480 pixel
     tft.drawFastVLine(i, 260, 60, 0x001F);  // Draw bar in white
 }
-for (int i = map(PrevAmp, 0, 5000, 0, 480); i > numBars2; i--) {
+for (int i = map(PrevAmp, 0, 5000, 0, 480); i > numBars2; i--) {// (min,max)-> (0-5,000) mili amps mapped to 0-480 pixel
     tft.drawFastVLine(i, 260, 60, BLACK);  // Draw bar in white
 }
 
 
-for (int i = (map(PrevWatt/1000000, 0, 14, 0, 480)); i < numBars3; i++) {
+for (int i = (map(PrevWatt/1000000, 0, 14, 0, 480)); i < numBars3; i++) {// (min,max)-> (0-14) watt mapped to 0-480 pixel
     tft.drawFastVLine(i, 140, 60, 0xF81F);  // Draw bar in white
 }
-for (int i = (map(PrevWatt/1000000, 0, 14, 0, 480)); i > numBars3; i--) {
+for (int i = (map(PrevWatt/1000000, 0, 14, 0, 480)); i > numBars3; i--) {// (min,max)-> (0-14) watt volt mapped to 0-480 pixel
     tft.drawFastVLine(i, 140, 60, BLACK);  // Draw bar in white
 }
 
