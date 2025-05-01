@@ -58,7 +58,9 @@ void loop() {
    
    maxAmps= fabs((ACS.mA_AC_sampling(2,0.5)-130));
 
-
+//
+//This part will check if the voltage change is big enough to clear pixels and write new value.
+//
 
  if(fabs(PrevAmp-maxAmps)>20){
      tft.setCursor(0,10);
@@ -67,7 +69,7 @@ void loop() {
  }
 
 
-     if(fabs(PrevAmp-maxAmps)>20){
+     if(fabs(PrevAmp-maxAmps)>20){ //if there is a difference in amps of 20mA  change previous number to black and write over
      dtostrf(maxAmps, 0, 0, buffer2);
     strncat(buffer2, "mA", 8);
      tft.setCursor(0,10);
@@ -78,11 +80,16 @@ void loop() {
     int numBars2 = map(maxAmps, 0, 5000, 0, 480);
  
    
-
-for (int i = map(PrevAmp, 0, 5000, 0, 480); i < numBars2; i++) {
+//
+//This part display the horizontal bars on the screen for current
+//If Previous value is greater then it will draw the pixels it needs to in black
+//If the current value is greater then it will draw the pixels needed in color 
+//If you reach the max of amps make sure to change the max value. 
+// 
+for (int i = map(PrevAmp, 0, 5000, 0, 480); i < numBars2; i++) {// (min,max)-> (0-5,000) mili amps mapped to 0-480 pixel
     tft.drawFastVLine(i, 260, 60, 0x001F);  // Draw bar in blue (16 bit color)
 }
-for (int i = map(PrevAmp, 0, 5000, 0, 480); i > numBars2; i--) {
+for (int i = map(PrevAmp, 0, 5000, 0, 480); i > numBars2; i--) {// (min,max)-> (0-5,000) mili amps mapped to 0-480 pixel
     tft.drawFastVLine(i, 260, 60, BLACK);  // Draw bar in black to where amps value now is
 }
 
